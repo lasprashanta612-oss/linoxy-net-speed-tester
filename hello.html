@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0b0d">
+  <meta name="description" content="Measure your current internet download, upload, and latency with LINNOXY Net Speed Tester.">
+  <title>LINNOXY — Net Speed Tester</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0b0b0d;
+      color: #f7f5f5;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      --red: #f04444;
+      --muted: #99969a;
+      --border: #29272a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      background: radial-gradient(ellipse at 50% -18%, rgba(240, 68, 68, .15), transparent 42%), #0b0b0d;
+    }
+    button { font: inherit; }
+    button:focus-visible { outline: 2px solid #ff7777; outline-offset: 4px; }
+    .page { width: min(100% - 40px, 940px); margin: 0 auto; }
+    header { height: 82px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,.08); }
+    .brand { display: flex; align-items: center; gap: 11px; }
+    .brand-icon { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 11px; background: var(--red); color: #111; font-size: 21px; font-weight: 950; letter-spacing: -3px; transform: skew(-7deg); }
+    .brand-name { font-size: 16px; font-weight: 850; letter-spacing: .17em; }
+    .brand-name span { color: var(--red); }
+    .connection { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
+    .connection-dot { width: 7px; height: 7px; border-radius: 50%; background: #777; }
+    .connection.online .connection-dot { background: #6dd69a; box-shadow: 0 0 10px rgba(109,214,154,.6); }
+    main { padding: 48px 0 36px; }
+    .intro { margin-bottom: 28px; text-align: center; }
+    .eyebrow { margin: 0 0 12px; color: #ff6565; font-size: 10px; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; }
+    h1 { margin: 0; font-size: clamp(31px, 5vw, 45px); font-weight: 760; letter-spacing: -.055em; }
+    .subtitle { max-width: 500px; margin: 11px auto 0; color: var(--muted); font-size: 14px; line-height: 1.65; }
+    .test-card { overflow: hidden; border: 1px solid #30272a; border-radius: 22px; background: linear-gradient(155deg, rgba(36,24,27,.7), rgba(18,18,20,.98) 44%); box-shadow: 0 24px 90px rgba(0,0,0,.32), 0 0 70px rgba(185,27,35,.06); }
+    .test-content { display: grid; grid-template-columns: minmax(0,1fr) minmax(260px,.82fr); align-items: center; gap: 32px; padding: 33px 39px 27px; }
+    .meter-wrap { position: relative; width: min(100%,400px); margin: 0 auto; }
+    .meter { display: block; width: 100%; overflow: visible; }
+    .meter-track, .meter-value { fill: none; stroke-width: 13; stroke-linecap: round; stroke-dasharray: 314.2 314.2; }
+    .meter-track { stroke: #393236; }
+    .meter-value { stroke: var(--red); stroke-dashoffset: 282.7; filter: drop-shadow(0 0 8px rgba(240,68,68,.42)); transition: stroke-dashoffset .35s ease; }
+    .meter-number { fill: #fff; font-size: 38px; font-weight: 760; letter-spacing: -2px; text-anchor: middle; }
+    .meter-unit { fill: #b5afb2; font-size: 12px; font-weight: 550; text-anchor: middle; }
+    .meter-label { fill: #777175; font-size: 9px; letter-spacing: 1px; text-anchor: middle; }
+    .meter-center { fill: #171416; stroke: #393236; stroke-width: 1; }
+    .meter-needle { stroke: #f5eeee; stroke-width: 2; stroke-linecap: round; transform-origin: 150px 150px; transform: rotate(-135deg); transition: transform .35s ease; }
+    .meter-pin { fill: var(--red); stroke: #1c1719; stroke-width: 3; }
+    .meter-status { position: absolute; right: 0; bottom: 15px; left: 0; color: var(--muted); font-size: 11px; text-align: center; }
+    .meter-status.error { color: #ff8585; }
+    .meter-status.success { color: #7cdda5; }
+    .readings { display: grid; gap: 11px; }
+    .reading { display: flex; min-height: 75px; align-items: center; justify-content: space-between; gap: 12px; padding: 15px 17px; border: 1px solid #29272a; border-radius: 13px; background: rgba(12,12,14,.72); }
+    .reading-label { display: flex; align-items: center; gap: 9px; color: #c7c2c5; font-size: 12px; }
+    .reading-icon { display: grid; width: 28px; height: 28px; place-items: center; border-radius: 9px; background: rgba(240,68,68,.12); color: #ff6969; font-size: 15px; }
+    .reading-value { text-align: right; font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .reading-value small { color: var(--muted); font-size: 11px; font-weight: 500; }
+    .button-row { display: flex; justify-content: center; padding: 0 24px 27px; }
+    .start-button { min-width: 205px; min-height: 51px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 0 24px; border: 0; border-radius: 13px; background: var(--red); color: #120e0e; cursor: pointer; font-size: 13px; font-weight: 800; transition: transform .15s, background .2s, opacity .2s; }
+    .start-button:hover:not(:disabled) { background: #ff5a5a; transform: translateY(-1px); }
+    .start-button:active:not(:disabled) { transform: scale(.98); }
+    .start-button:disabled { cursor: wait; opacity: .8; }
+    .button-icon { font-size: 16px; }
+    .results { display: none; grid-template-columns: repeat(3,1fr); border-top: 1px solid #29272a; }
+    .results.visible { display: grid; }
+    .result { padding: 19px 15px 20px; text-align: center; }
+    .result + .result { border-left: 1px solid #29272a; }
+    .result-label { margin: 0 0 8px; color: var(--muted); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
+    .result-value { margin: 0; font-size: 22px; font-weight: 740; font-variant-numeric: tabular-nums; letter-spacing: -.04em; }
+    .result-value small { color: #aaa3a7; font-size: 11px; font-weight: 500; letter-spacing: 0; }
+    .details { display: flex; justify-content: center; gap: 8px; margin-top: 17px; color: #827d80; font-size: 11px; text-align: center; line-height: 1.6; }
+    .details span + span::before { content: "·"; margin-right: 8px; color: #514b4e; }
+    .how-it-works { margin-top: 37px; }
+    .how-it-works h2 { margin: 0 0 14px; color: #d5d0d2; font-size: 12px; font-weight: 680; text-align: center; }
+    .steps { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+    .step { padding: 15px; border: 1px solid #232124; border-radius: 12px; background: rgba(19,19,21,.65); }
+    .step-number { color: #f26a6a; font-size: 10px; font-weight: 800; letter-spacing: .12em; }
+    .step p { margin: 7px 0 0; color: var(--muted); font-size: 11px; line-height: 1.55; }
+    footer { padding: 5px 0 30px; color: #777276; font-size: 10px; line-height: 1.7; text-align: center; }
+    .spin { width: 15px; height: 15px; border: 2px solid rgba(18,14,14,.3); border-top-color: #120e0e; border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (max-width: 660px) {
+      .page { width: min(100% - 28px,500px); }
+      header { height: 70px; }
+      main { padding-top: 37px; }
+      .test-content { grid-template-columns: 1fr; gap: 14px; padding: 23px 17px 16px; }
+      .meter-wrap { width: min(100%,340px); }
+      .readings { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+      .reading { min-height: 67px; padding: 11px; }
+      .reading-label { gap: 6px; font-size: 11px; }
+      .reading-icon { width: 24px; height: 24px; font-size: 13px; }
+      .reading-value { font-size: 15px; }
+      .reading-value small { font-size: 10px; }
+      .button-row { padding-bottom: 21px; }
+      .steps { gap: 7px; }
+      .step { padding: 12px 10px; }
+      .step p { font-size: 10px; }
+    }
+    @media (max-width: 390px) {
+      .brand-name { font-size: 14px; }
+      .connection { font-size: 10px; }
+      .steps { grid-template-columns: 1fr; }
+      .step { display: flex; align-items: baseline; gap: 10px; }
+      .step p { margin: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div class="brand" aria-label="LINNOXY">
+        <span class="brand-icon" aria-hidden="true">Lx</span>
+        <span class="brand-name">LINNO<span>XY</span></span>
+      </div>
+      <div class="connection" id="connection" aria-live="polite">
+        <span class="connection-dot" aria-hidden="true"></span>
+        <span id="connection-label">Checking connection</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="intro">
+        <p class="eyebrow">Your connection, measured</p>
+        <h1>Net speed tester</h1>
+        <p class="subtitle">See how fast your internet is right now. We send and receive real data for a longer sample before showing your average.</p>
+      </section>
+      <section class="test-card" aria-label="Internet speed test">
+        <div class="test-content">
+          <div class="meter-wrap">
+            <svg class="meter" viewBox="0 0 300 210" role="img" aria-labelledby="meter-title meter-description">
+              <title id="meter-title">Live internet speed meter</title>
+              <desc id="meter-description">The current speed will appear here during the test.</desc>
+              <path class="meter-track" d="M 50 150 A 100 100 0 0 1 250 150"></path>
+              <path class="meter-value" id="meter-arc" d="M 50 150 A 100 100 0 0 1 250 150"></path>
+              <text class="meter-label" x="48" y="174">0 KBPS</text>
+              <text class="meter-label" x="252" y="174">10 GBPS</text>
+              <line class="meter-needle" id="meter-needle" x1="150" y1="150" x2="150" y2="68"></line>
+              <circle class="meter-center" cx="150" cy="150" r="7"></circle>
+              <circle class="meter-pin" cx="150" cy="150" r="3"></circle>
+              <text class="meter-number" id="meter-number" x="150" y="117">—</text>
+              <text class="meter-unit" id="meter-unit" x="150" y="138">Mbps</text>
+            </svg>
+            <div class="meter-status" id="status" role="status" aria-live="polite">Ready when you are</div>
+          </div>
+          <div class="readings" aria-label="Live test readings">
+            <div class="reading">
+              <div class="reading-label"><span class="reading-icon" aria-hidden="true">↓</span> Download</div>
+              <div class="reading-value"><span id="download-value">—</span> <small id="download-unit">Mbps</small></div>
+            </div>
+            <div class="reading">
+              <div class="reading-label"><span class="reading-icon" aria-hidden="true">↑</span> Upload</div>
+              <div class="reading-value"><span id="upload-value">—</span> <small id="upload-unit">Mbps</small></div>
+            </div>
+            <div class="reading">
+              <div class="reading-label"><span class="reading-icon" aria-hidden="true">◷</span> Latency</div>
+              <div class="reading-value"><span id="latency-value">—</span> <small>ms</small></div>
+            </div>
+            <div class="reading">
+              <div class="reading-label"><span class="reading-icon" aria-hidden="true">⌁</span> Jitter</div>
+              <div class="reading-value"><span id="jitter-value">—</span> <small>ms</small></div>
+            </div>
+          </div>
+        </div>
+        <div class="button-row">
+          <button class="start-button" id="start-button" type="button">
+            <span class="button-icon" aria-hidden="true">↗</span>
+            <span id="button-label">Start speed test</span>
+          </button>
+        </div>
+        <div class="results" id="results" aria-live="polite">
+          <div class="result"><p class="result-label">Average speed</p><p class="result-value"><span id="average-result">—</span> <small id="average-unit">Mbps</small></p></div>
+          <div class="result"><p class="result-label">Download</p><p class="result-value"><span id="download-result">—</span> <small id="download-result-unit">Mbps</small></p></div>
+          <div class="result"><p class="result-label">Upload</p><p class="result-value"><span id="upload-result">—</span> <small id="upload-result-unit">Mbps</small></p></div>
+        </div>
+      </section>
+      <div class="details">
+        <span id="server-detail">Test server: Cloudflare global network</span>
+        <span>Results: 0 kbps – 10 Gbps</span>
+      </div>
+      <section class="how-it-works" aria-label="How the test works">
+        <h2>HOW YOUR TEST WORKS</h2>
+        <div class="steps">
+          <div class="step"><span class="step-number">01 / PING</span><p>Checks response time and connection stability.</p></div>
+          <div class="step"><span class="step-number">02 / DOWNLOAD</span><p>Receives test data to measure download speed.</p></div>
+          <div class="step"><span class="step-number">03 / UPLOAD</span><p>Sends test data to measure upload speed.</p></div>
+        </div>
+      </section>
+    </main>
+    <footer>
+      Speed tests are estimates and can vary with Wi-Fi, device load, server distance, and network conditions.
+      Your ISP’s advertised speed is not guaranteed by this test. Test traffic is sent to Cloudflare’s public speed-test endpoint and may use up to 180 MB of data.
+    </footer>
+  </div>
+
+  <script>
+    (() => {
+      const ENDPOINT = "https://speed.cloudflare.com";
+      const MAX_BPS = 10_000_000_000;
+      const METER_ARC_LENGTH = 314.2;
+      const SPEED_TIMEOUT_MS = 60_000;
+      const SPEED_SAMPLE_MS = 6_000;
+      const MAX_TRANSFER_ROUNDS = 6;
+      const DOWNLOAD_CHUNK_BYTES = 20_000_000;
+      const UPLOAD_CHUNK_BYTES = 10_000_000;
+      const $ = (id) => document.getElementById(id);
+      const button = $("start-button");
+      const status = $("status");
+      const meterArc = $("meter-arc");
+      const meterNeedle = $("meter-needle");
+      const meterNumber = $("meter-number");
+      const meterUnit = $("meter-unit");
+      const results = $("results");
+      let running = false;
+
+      function formatSpeed(bps) {
+        const bounded = Math.min(Math.max(0, bps), MAX_BPS);
+        if (bounded < 1_000_000) return { value: (bounded / 1_000).toFixed(0), unit: "kbps" };
+        if (bounded < 1_000_000_000) return { value: (bounded / 1_000_000).toFixed(2), unit: "Mbps" };
+        return { value: (bounded / 1_000_000_000).toFixed(2), unit: "Gbps" };
+      }
+
+      function formatMetric(value) {
+        if (!Number.isFinite(value) || value < 0) return "—";
+        return value < 10 ? value.toFixed(1) : Math.round(value).toString();
+      }
+
+      function setSpeed(bps) {
+        const safeBps = Math.min(Math.max(0, bps), MAX_BPS);
+        const formatted = formatSpeed(safeBps);
+        const progress = Math.log1p(safeBps / 10_000) / Math.log1p(MAX_BPS / 10_000);
+        meterNumber.textContent = formatted.value;
+        meterUnit.textContent = formatted.unit;
+        meterArc.style.strokeDashoffset = String(METER_ARC_LENGTH * (1 - progress));
+        meterNeedle.style.transform = `rotate(${-90 + 180 * progress}deg)`;
+      }
+
+      function setReading(name, bps) {
+        const formatted = formatSpeed(bps);
+        $(`${name}-value`).textContent = formatted.value;
+        $(`${name}-unit`).textContent = formatted.unit;
+      }
+
+      function updateStatus(message, kind = "") {
+        status.textContent = message;
+        status.className = `meter-status${kind ? ` ${kind}` : ""}`;
+      }
+
+      function testUrl(path, parameters = {}) {
+        const url = new URL(`${ENDPOINT}/${path}`);
+        for (const [key, value] of Object.entries(parameters)) url.searchParams.set(key, String(value));
+        url.searchParams.set("_", `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+        return url;
+      }
+
+      async function measurePing() {
+        const samples = [];
+        for (let i = 0; i < 5; i += 1) {
+          const started = performance.now();
+          const response = await fetch(testUrl("__down", { bytes: 0 }), { cache: "no-store" });
+          if (!response.ok) throw new Error(`Ping test returned HTTP ${response.status}.`);
+          await response.arrayBuffer();
+          samples.push(performance.now() - started);
+        }
+        const mean = samples.reduce((sum, sample) => sum + sample, 0) / samples.length;
+        const jitter = samples.reduce((sum, sample) => sum + Math.abs(sample - mean), 0) / samples.length;
+        return { latency: mean, jitter };
+      }
+
+      async function measureDownload() {
+        const started = performance.now();
+        let bytes = 0;
+        let lastTime = started;
+        let lastBytes = 0;
+        for (let round = 1; round <= MAX_TRANSFER_ROUNDS; round += 1) {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), SPEED_TIMEOUT_MS);
+          updateStatus(`Measuring download speed… (${round}/${MAX_TRANSFER_ROUNDS})`);
+          try {
+            const response = await fetch(testUrl("__down", { bytes: DOWNLOAD_CHUNK_BYTES }), {
+              cache: "no-store",
+              signal: controller.signal
+            });
+            if (!response.ok) throw new Error(`Download test returned HTTP ${response.status}.`);
+            if (!response.body) throw new Error("This browser cannot stream the download test.");
+            const reader = response.body.getReader();
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              bytes += value.byteLength;
+              const now = performance.now();
+              if (now - lastTime >= 250) {
+                setSpeed(((bytes - lastBytes) * 8 * 1_000) / (now - lastTime));
+                lastTime = now;
+                lastBytes = bytes;
+              }
+            }
+          } catch (error) {
+            if (controller.signal.aborted) throw new Error("Download test timed out. Check your connection and try again.");
+            throw error;
+          } finally {
+            clearTimeout(timeout);
+          }
+          if (performance.now() - started >= SPEED_SAMPLE_MS) break;
+        }
+        const seconds = (performance.now() - started) / 1_000;
+        if (!bytes || seconds <= 0) throw new Error("The download test received no measurable data.");
+        return (bytes * 8) / seconds;
+      }
+
+      async function measureUpload() {
+        const started = performance.now();
+        let bytes = 0;
+        let uploadedAt = started;
+        let lastTime = started;
+        let lastBytes = 0;
+        for (let round = 1; round <= MAX_TRANSFER_ROUNDS; round += 1) {
+          updateStatus(`Measuring upload speed… (${round}/${MAX_TRANSFER_ROUNDS})`);
+          const roundUploadedAt = await new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            let transferFinishedAt;
+            xhr.open("POST", testUrl("__up"));
+            xhr.timeout = SPEED_TIMEOUT_MS;
+            xhr.setRequestHeader("Content-Type", "application/octet-stream");
+            xhr.upload.addEventListener("progress", (event) => {
+              const now = performance.now();
+              if (!event.lengthComputable) return;
+              if (now - lastTime >= 200) {
+                setSpeed(((bytes + event.loaded - lastBytes) * 8 * 1_000) / (now - lastTime));
+                lastTime = now;
+                lastBytes = bytes + event.loaded;
+              }
+              if (event.loaded >= UPLOAD_CHUNK_BYTES) transferFinishedAt = now;
+            });
+            xhr.addEventListener("load", () => {
+              if (xhr.status < 200 || xhr.status >= 300) {
+                reject(new Error(`Upload test returned HTTP ${xhr.status}.`));
+                return;
+              }
+              resolve(transferFinishedAt || performance.now());
+            });
+            xhr.addEventListener("error", () => reject(new Error("The upload test could not reach the speed-test server.")));
+            xhr.addEventListener("timeout", () => reject(new Error("Upload test timed out. Check your connection and try again.")));
+            xhr.send(new Blob([new Uint8Array(UPLOAD_CHUNK_BYTES)]));
+          });
+          bytes += UPLOAD_CHUNK_BYTES;
+          uploadedAt = roundUploadedAt;
+          lastBytes = bytes;
+          if (uploadedAt - started >= SPEED_SAMPLE_MS) break;
+        }
+        const seconds = (uploadedAt - started) / 1_000;
+        if (!bytes || seconds <= 0) throw new Error("The upload test did not produce a measurable duration.");
+        return (bytes * 8) / seconds;
+      }
+
+      function showResult(id, unitId, bps) {
+        const formatted = formatSpeed(bps);
+        $(id).textContent = formatted.value;
+        $(unitId).textContent = formatted.unit;
+      }
+
+      async function runTest() {
+        if (running) return;
+        running = true;
+        button.disabled = true;
+        button.innerHTML = '<span class="spin" aria-hidden="true"></span><span>Testing connection…</span>';
+        results.classList.remove("visible");
+        $("download-value").textContent = "—";
+        $("upload-value").textContent = "—";
+        $("latency-value").textContent = "—";
+        $("jitter-value").textContent = "—";
+        setSpeed(0);
+        $("connection-label").textContent = "Test in progress";
+        $("connection").classList.remove("online");
+
+        try {
+          updateStatus("Checking latency and stability…");
+          const { latency, jitter } = await measurePing();
+          $("latency-value").textContent = formatMetric(latency);
+          $("jitter-value").textContent = formatMetric(jitter);
+
+          updateStatus("Measuring download speed…");
+          const downloadBps = await measureDownload();
+          setReading("download", downloadBps);
+
+          updateStatus("Measuring upload speed…");
+          const uploadBps = await measureUpload();
+          setReading("upload", uploadBps);
+
+          const averageBps = (downloadBps + uploadBps) / 2;
+          setSpeed(averageBps);
+          showResult("average-result", "average-unit", averageBps);
+          showResult("download-result", "download-result-unit", downloadBps);
+          showResult("upload-result", "upload-result-unit", uploadBps);
+          results.classList.add("visible");
+          updateStatus("Speed test complete", "success");
+          $("connection-label").textContent = "Test complete";
+          $("connection").classList.add("online");
+          button.innerHTML = '<span class="button-icon" aria-hidden="true">↻</span><span>Test again</span>';
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "The speed test failed unexpectedly.";
+          updateStatus(message, "error");
+          $("connection-label").textContent = "Test failed";
+          button.innerHTML = '<span class="button-icon" aria-hidden="true">↻</span><span>Try again</span>';
+        } finally {
+          running = false;
+          button.disabled = false;
+        }
+      }
+
+      button.addEventListener("click", runTest);
+      if (navigator.onLine) {
+        $("connection-label").textContent = "Ready to test";
+        $("connection").classList.add("online");
+      } else {
+        $("connection-label").textContent = "Offline";
+      }
+      window.addEventListener("online", () => {
+        if (!running) {
+          $("connection-label").textContent = "Ready to test";
+          $("connection").classList.add("online");
+        }
+      });
+      window.addEventListener("offline", () => {
+        $("connection-label").textContent = "Offline";
+        $("connection").classList.remove("online");
+      });
+    })();
+  </script>
+</body>
+</html>
